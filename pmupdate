@@ -1,0 +1,223 @@
+#!/bin/bash
+#pmupdate - Created by sling00  irc.freenode.net #pimp
+#Thanks to # FWishbringer 04/12/13 for the bulk of the download function that gives the sexy fluid progress bars ;).
+
+#VARIABLES DON'T TOUCH UNLESS YOU KNOW WHAT YOU ARE GOING TO BREAK!
+SCRIPT_VERSION=1.0.2
+PIMP_VERSION=`sed -n '2,2p' /etc/version`
+CURL2='/usr/bin/curl'
+PMUPDATEVERURL="http://hackin.yourshell.net/pmupdate/version"
+CURLARGS="-f -s -S -k"
+PMURL="https://github.com/starlilyth/Linux-PoolManager/archive/master.zip"
+SCRIPT_NEW_VERSION="$($CURL2 $CURLARGS $PMUPDATEVERURL)"
+THELINE='echo -====================================================================-'
+#Wget progress filter 
+#DOWNLOADFUNCTION
+function download()
+{
+local URL=$2
+local destin=$1
+#local CLEANURL=`echo $URL | sed -r 's#.*\/([^.]+).*#\1#'`
+local CLEANURL=`echo $URL | sed -r 's#.*\/([^/]+).*#\1#'`
+echo "Downloading $CLEANURL"
+wget -O $destin  "$URL" 2>&1 | awk -v bsc=`tput cub1` '/[.] +[0-9]{2}?[0-9]?%/ {
+percentage = substr($0,63,3)
+byfour = percentage / 4
+printf "["
+for (i=1; i<=25; i++)
+{
+  if (i <= byfour)
+     printf "="
+  else
+     printf " "
+}
+printf "] %3d%%",percentage
+for (i=1; i<= 32; i++) {printf bsc}
+}
+END {printf "[=========================] 100%%\n"}'
+}
+#YES ITS AWESOME ISNT IT!
+#Installer Function-Pimp
+function doinstall.pimp()
+{
+cd /opt/pimp/
+echo "moving old /opt/pimp/pminstall install directory....."
+sleep 2
+rm -rf /opt/pimp/pminstall.pimpdist 2> /dev/null
+mv /opt/pimp/pminstall /opt/pimp/pminstall.pimpdist
+echo "Extracting new pool manager.... Everyone thank LILY!!!!"
+sleep 2
+unzip -q /tmp/poolmanager.zip -d /opt/pimp/pminstall
+#git clone https://github.com/starlilyth/Linux-PoolManager.git /opt/pimp/pminstall
+echo "Installing new poolmanager"
+sleep 2
+cd /opt/pimp/pminstall/Linux-PoolManager-master/
+ ./install-pm.pl -q
+echo "Setting permissions on poolmanager.conf just incase these are wrong.."
+chown www-data.root /opt/ifmi/poolmanager.conf
+echo "Successfully installed updated poolmanager"
+$THELINE
+echo "Update poolmanager.conf with latest miner profiles (DOES NOT REPLACE YOUR CGMINER.CONF FILES)"
+echo "Note this will reset your active mining profile to scrypt, as well as remove any email notification settings"
+echo "Install updated profiles? Y/N:"
+	read PMPROFILES
+	if [ $PMPROFILES == y ]; then
+	    echo "Backing up old poolmanager.conf to /opt/ifmi/poolmanager.conf.bak"
+	    if [[ -e /opt/ifmi/poolmanager.conf ]]; then
+	    	mv /opt/ifmi/poolmanager.conf /opt/ifmi/poolmanager.conf.bak
+	    	tar jxvf /tmp/poolmanager.conf.tbz2 -C /opt/ifmi/ > /tmp/pmprofile.log
+	    	chown www-data.root /opt/ifmi/poolmanager.conf
+	    	sleep 2
+	    else echo "No poolmanager.conf found to back up...Continuing..."
+		fi
+		echo "PiMP Updated default algorithm profiles installed...Enjoy!"
+		echo "Remember to reconfigure your email alert settings after using this feature"
+		rm /tmp/poolmanager.conf.tbz2
+		rm /tmp/poolmanager.zip
+		echo "Restarting mining..... (May take 30-45 seconds!)"
+		/etc/init.d/mine start
+		echo "Done..."
+		echo "Script completed! Please report bugs to Sling00 in #PIMP irc.freenode.net"
+		exit 0
+	else echo "Script completed! Please report bugs to Sling00 in #PIMP irc.freenode.net"
+exit 0
+fi
+}
+#Installer Function-universal
+function doinstall.universal()
+{
+echo "moving old ./Linux-Poolmanager install directory.....Incase you need to roll back!"
+sleep 2
+rm -rf ./pminstall.pmupdatedist 2> /dev/null
+mv ./pminstall ./pminstall.pmupdatedist
+echo "Extracting new pool manager.... Everyone thank LILY!!!!"
+sleep 2
+unzip -q /tmp/poolmanager.zip -d ./pminstall
+#git clone https://github.com/starlilyth/Linux-PoolManager.git /opt/pimp/pminstall
+#echo "git cloning new pool manager.... Everyone thank LILY!!!!"
+#git clone https://github.com/starlilyth/Linux-PoolManager.git ./pminstall
+echo "Installing new poolmanager"
+sleep 2
+cd ./pminstall/Linux-Poolmanager-master/
+ ./install-pm.pl -q
+echo "Setting permissions on poolmanager.conf just incase these are wrong.."
+chown www-data.root /opt/ifmi/poolmanager.conf
+echo "Successfully installed updated poolmanager"
+exit 0
+}
+clear
+if [ "$UID" -ne 0 ]
+  then echo "ERROR: Please run as root"
+  else
+$THELINE
+echo -e '\E[00;34m'"\033[1mPoolmanager update & Profile update for PiMP /universal Version $SCRIPT_VERSION\033[0m"
+echo -e '\E[00;31m'"\033[1mScript by Sling00\033[0m"
+$THELINE
+echo -e '\E[00;31m'"\033[1mNOTE: Installation on BAMT or OTHER OS IS EXPERIMENTAL!\033[0m"
+#sleep 5
+echo -n "Do you wish to continue Enter y/n: "
+	read PMUPDATE_CONTINUE
+	if [ $PMUPDATE_CONTINUE == y ]; then
+		echo "Getting latest version of updatepm"
+#Is pmupdate up to date?! Updater code below...		
+echo "Checking if pmupdate script is up to date........"
+if [ $SCRIPT_NEW_VERSION \> $SCRIPT_VERSION ];
+	then
+	echo -n "pmupdate script is out of date! Would you like it to update itself? y/n: "
+	read PMUPDATE_UPDATE
+	if [ $PMUPDATE_UPDATE == y ]; then
+		echo "Getting latest version of updatepm"
+		download /tmp/pmupdate.tar http://hackin.yourshell.net/pmupdate.tar
+		tar xvf /tmp/pmupdate.tar -C /opt/pimp/ > /tmp/pmupdate.log
+		echo "Update completed. Please rerun this script to continue."
+		rm /tmp/pmupdate.tar
+		exit 0
+	else
+
+	echo "not updating...Continue at your own risk....."
+	$THELINE
+
+fi
+else 
+	echo "Script up to date! Commencing..."
+	$THELINE
+	fi
+#Work begins below
+if grep -wqs pimp /etc/version ; then
+echo "Pimp $PIMP_VERSION detected Continuing installation in pimp mode"
+echo "Stopping mining....."
+/etc/init.d/mine stop
+
+$THELINE
+case $PIMP_VERSION in
+	 	1.0 )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+		    download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.0.tbz2
+			doinstall.pimp
+			;;
+		1.1 )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.1.tbz2
+			doinstall.pimp
+			;;
+		1.2 )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.2.tbz2
+			doinstall.pimp
+			;;
+		1.3.1 )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.3.1.tbz2
+			doinstall.pimp
+			;;
+		1.3.7h )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.3.7h.tbz2
+			doinstall.pimp
+			;;
+		1.3.7t )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.3.7t.tbz2
+			doinstall.pimp
+			;;
+		1.4-amd-12.8 )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.4-amd-12.8.tbz2
+			doinstall.pimp
+			;;
+		1.4-amd-13.12 )
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.4-amd-13.12.tbz2
+			doinstall.pimp
+			;;
+		9.9.9 )
+			echo DEV VERSION DETECTED
+			echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.dev.tbz2
+			doinstall.pimp
+			;;
+	esac	
+else 
+	echo "blah universal version will need more testing"
+	echo "...generic install going ahead now..."
+	echo "Will add dep install information here soon."
+	doinstall.universal
+fi
+
+exit 0
+#if [[ sed -n '2,2p' /etc/version ]] 
+
+else
+	echo "Error: Not updating because the user didn't answer y when prompted."
+	exit 1
+fi
+fi
