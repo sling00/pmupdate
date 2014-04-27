@@ -3,7 +3,7 @@
 #Thanks to # FWishbringer 04/12/13 for the bulk of the download function that gives the sexy fluid progress bars ;).
 
 #VARIABLES DON'T TOUCH UNLESS YOU KNOW WHAT YOU ARE GOING TO BREAK!
-SCRIPT_VERSION=1.0.3
+SCRIPT_VERSION=1.0.4
 PIMP_VERSION=`sed -n '2,2p' /etc/version`
 CURL2='/usr/bin/curl'
 PMUPDATEVERURL="http://hackin.yourshell.net/pmupdate/version"
@@ -197,6 +197,12 @@ case $PIMP_VERSION in
 			echo "Gathering files for PiMP $PIMP_VERSION....."
 			download /tmp/poolmanager.zip $PMURL
 			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.4-amd-13.12.tbz2
+			doinstall.pimp
+			;;
+		1.4-amd-14.4 )
+				echo "Gathering files for PiMP $PIMP_VERSION....."
+			download /tmp/poolmanager.zip $PMURL
+			download /tmp/poolmanager.conf.tbz2 http://hackin.yourshell.net/pmupdate/poolmanager.conf.1.4-amd-14.4.tbz2
 			doinstall.pimp
 			;;
 		9.9.9 )
