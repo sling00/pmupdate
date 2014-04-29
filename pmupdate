@@ -3,7 +3,7 @@
 #Thanks to # FWishbringer 04/12/13 for the bulk of the download function that gives the sexy fluid progress bars ;).
 
 #VARIABLES DON'T TOUCH UNLESS YOU KNOW WHAT YOU ARE GOING TO BREAK!
-SCRIPT_VERSION=1.0.4
+SCRIPT_VERSION=1.0.5
 PIMP_VERSION=`sed -n '2,2p' /etc/version`
 CURL2='/usr/bin/curl'
 PMUPDATEVERURL="http://hackin.yourshell.net/pmupdate/version"
@@ -35,7 +35,6 @@ for (i=1; i<= 32; i++) {printf bsc}
 }
 END {printf "[=========================] 100%%\n"}'
 }
-
 #Installer Function-Pimp
 function doinstall.pimp()
 {
@@ -56,7 +55,7 @@ echo "Setting permissions on poolmanager.conf just incase these are wrong.."
 chown www-data.root /opt/ifmi/poolmanager.conf
 echo "Successfully installed updated poolmanager"
 $THELINE
-echo "Update poolmanager.conf with latest miner profiles (DOES NOT REPLACE YOUR CGMINER.CONF FILES)"
+echo "Update poolmanager.conf with latest miner profiles? (DOES NOT REPLACE YOUR CGMINER.CONF FILES)"
 echo "Note this will reset your active mining profile to scrypt, as well as remove any email notification settings"
 echo "Install updated profiles? Y/N:"
 	read PMPROFILES
@@ -83,6 +82,14 @@ echo "Install updated profiles? Y/N:"
 	else echo "Script completed! Please report bugs to Sling00 in #PIMP irc.freenode.net"
 exit 0
 fi
+}
+function pimpupdate(){
+	echo "NOTE: As of 1.0.5 this script installs pimpupdate"
+		echo "pimpupdate is the new version of pmupdate"
+		echo "that also allows applying minor fixes without requiring"
+		echo "a usb reflash to update your pimp"
+		echo "Please allow the script to update itself then run pimpupdate"
+		echo "instead of pmupdate"
 }
 #Installer Function-universal
 function doinstall.universal()
@@ -119,9 +126,9 @@ echo -e '\E[00;31m'"\033[1mNOTE: Installation on BAMT or OTHER OS IS EXPERIMENTA
 echo -n "Do you wish to continue Enter y/n: "
 	read PMUPDATE_CONTINUE
 	if [ $PMUPDATE_CONTINUE == y ]; then
-		echo "Getting latest version of updatepm"
 #Is pmupdate up to date?! Updater code below...		
 echo "Checking if pmupdate script is up to date........"
+pimpupdate
 if [ $SCRIPT_NEW_VERSION \> $SCRIPT_VERSION ];
 	then
 	echo -n "pmupdate script is out of date! Would you like it to update itself? y/n: "
@@ -131,13 +138,14 @@ if [ $SCRIPT_NEW_VERSION \> $SCRIPT_VERSION ];
 		download /tmp/pmupdate.tar http://hackin.yourshell.net/pmupdate.tar
 		tar xvf /tmp/pmupdate.tar -C /opt/pimp/ > /tmp/pmupdate.log
 		echo "Update completed. Please rerun this script to continue."
+		pimpupdate
+
 		rm /tmp/pmupdate.tar
 		exit 0
 	else
 
 	echo "not updating...Continue at your own risk....."
 	$THELINE
-
 fi
 else 
 	echo "Script up to date! Commencing..."
@@ -148,7 +156,6 @@ if grep -wqs pimp /etc/version ; then
 echo "Pimp $PIMP_VERSION detected Continuing installation in pimp mode"
 echo "Stopping mining....."
 /etc/init.d/mine stop
-
 $THELINE
 case $PIMP_VERSION in
 	 	1.0 )
@@ -219,10 +226,7 @@ else
 	echo "Will add dep install information here soon."
 	doinstall.universal
 fi
-
 exit 0
-#if [[ sed -n '2,2p' /etc/version ]] 
-
 else
 	echo "Error: Not updating because the user didn't answer y when prompted."
 	exit 1
